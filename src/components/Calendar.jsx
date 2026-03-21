@@ -1,18 +1,32 @@
-import React from "react";
+import React, { useState } from "react";
 
 const Calendar = () => {
-  const daysInMonth = new Date(2026, 2 + 1, 0).getDate(); // marzo = 2
+  const [selectedDay, setSelectedDay] = useState(null);
 
+  const daysInMonth = new Date(2026, 2 + 1, 0).getDate();
   const days = [];
 
   for (let i = 1; i <= daysInMonth; i++) {
     days.push(i);
   }
 
+  const handleDayClick = (day) => {
+    console.log("Día seleccionado:", day);
+    setSelectedDay(day);
+  };
+
   return (
     <div style={styles.grid}>
       {days.map((day) => (
-        <div key={day} style={styles.day}>
+        <div
+          key={day}
+          className="day"
+          style={{
+            ...styles.day,
+            border: selectedDay === day ? "3px solid #4CAF50" : "none",
+          }}
+          onClick={() => handleDayClick(day)}
+        >
           {day}
         </div>
       ))}
@@ -33,8 +47,9 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: "10px",
+    borderRadius: "15px",
     cursor: "pointer",
+    transition: "0.2s",
   },
 };
 
