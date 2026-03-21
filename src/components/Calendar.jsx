@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 
 const Calendar = () => {
+  const [showModal, setShowModal] = useState(false);
+  const [note, setNote] = useState("");
+  const [status, setStatus] = useState("pendiente");
   const [selectedDay, setSelectedDay] = useState(null);
 
   const daysInMonth = new Date(2026, 2 + 1, 0).getDate();
@@ -11,46 +14,101 @@ const Calendar = () => {
   }
 
   const handleDayClick = (day) => {
-    console.log("Día seleccionado:", day);
     setSelectedDay(day);
+    setShowModal(true);
+  };
+
+  // ✅ MOVER AQUÍ
+  const styles = {
+    grid: {
+      display: "grid",
+      gridTemplateColumns: "repeat(7, 1fr)",
+      gap: "10px",
+      padding: "20px",
+    },
+    day: {
+      height: "80px",
+      backgroundColor: "#E0E0E0",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: "15px",
+      cursor: "pointer",
+      transition: "0.2s",
+    },
+    modalOverlay: {
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      backgroundColor: "rgba(0,0,0,0.6)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    modal: {
+      backgroundColor: "#1e1e1e",
+      padding: "20px",
+      borderRadius: "10px",
+      width: "300px",
+      display: "flex",
+      flexDirection: "column",
+      gap: "10px",
+    },
+    input: {
+      padding: "10px",
+      borderRadius: "5px",
+      border: "none",
+    },
   };
 
   return (
-    <div style={styles.grid}>
-      {days.map((day) => (
-        <div
-          key={day}
-          className="day"
-          style={{
-            ...styles.day,
-            border: selectedDay === day ? "3px solid #4CAF50" : "none",
-          }}
-          onClick={() => handleDayClick(day)}
-        >
-          {day}
-        </div>
-      ))}
-    </div>
-  );
-};
+    <>
+      <div style={styles.grid}>
+        {days.map((day) => (
+          <div
+            key={day}
+            className="day"
+            style={{
+              ...styles.day,
+              border: selectedDay === day ? "3px solid #4CAF50" : "none",
+            }}
+            onClick={() => handleDayClick(day)}
+          >
+            {day}
+          </div>
+        ))}
+      </div>
 
-const styles = {
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(7, 1fr)",
-    gap: "10px",
-    padding: "20px",
-  },
-  day: {
-    height: "80px",
-    backgroundColor: "#E0E0E0",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: "15px",
-    cursor: "pointer",
-    transition: "0.2s",
-  },
+      {showModal && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.modal}>
+            <h2>Día {selectedDay}</h2>
+
+            <input
+              type="text"
+              placeholder="Escribe una nota"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              style={styles.input}
+            />
+
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              style={styles.input}
+            >
+              <option value="pendiente">Pendiente</option>
+              <option value="confirmado">Confirmado</option>
+            </select>
+
+            <button onClick={() => setShowModal(false)}>Guardar</button>
+          </div>
+        </div>
+      )}
+    </>
+  );
 };
 
 export default Calendar;
