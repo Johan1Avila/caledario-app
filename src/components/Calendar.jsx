@@ -5,6 +5,7 @@ const Calendar = () => {
   const [note, setNote] = useState("");
   const [status, setStatus] = useState("pendiente");
   const [selectedDay, setSelectedDay] = useState(null);
+  const [events, setEvents] = useState({});
 
   const daysInMonth = new Date(2026, 2 + 1, 0).getDate();
   const days = [];
@@ -15,6 +16,17 @@ const Calendar = () => {
 
   const handleDayClick = (day) => {
     setSelectedDay(day);
+
+    const event = events[day];
+
+    if (event) {
+      setNote(event.note);
+      setStatus(event.status);
+    } else {
+      setNote("");
+      setStatus("pendiente");
+    }
+
     setShowModal(true);
   };
 
@@ -72,7 +84,14 @@ const Calendar = () => {
             className="day"
             style={{
               ...styles.day,
-              border: selectedDay === day ? "3px solid #4CAF50" : "none",
+              backgroundColor:
+                events[day]?.status === "confirmado"
+                  ? "#4CAF50"
+                  : events[day]?.status === "pendiente"
+                    ? "#FFC107"
+                    : "#E0E0E0",
+
+              border: selectedDay === day ? "3px solid #000" : "none",
             }}
             onClick={() => handleDayClick(day)}
           >
@@ -103,7 +122,18 @@ const Calendar = () => {
               <option value="confirmado">Confirmado</option>
             </select>
 
-            <button onClick={() => setShowModal(false)}>Guardar</button>
+            <button
+              onClick={() => {
+                setEvents({
+                  ...events,
+                  [selectedDay]: { note, status },
+                });
+
+                setShowModal(false);
+              }}
+            >
+              Guardar
+            </button>
           </div>
         </div>
       )}
