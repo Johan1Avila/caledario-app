@@ -1,11 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 const Calendar = () => {
+  localStorage.setItem("clave", "valor");
+  localStorage.getItem("clave");
   const [showModal, setShowModal] = useState(false);
   const [note, setNote] = useState("");
-  const [status, setStatus] = useState("pendiente");
+  const [status, setStatus] = useState("");
   const [selectedDay, setSelectedDay] = useState(null);
-  const [events, setEvents] = useState({});
+  const [events, setEvents] = useState(() => {
+    const saved = localStorage.getItem("calendarEvents");
+    return saved ? JSON.parse(saved) : {};
+  });
 
   const daysInMonth = new Date(2026, 2 + 1, 0).getDate();
   const days = [];
@@ -21,10 +26,10 @@ const Calendar = () => {
 
     if (event) {
       setNote(event.note);
-      setStatus(event.status);
+      setStatus(event.status || "");
     } else {
       setNote("");
-      setStatus("pendiente");
+      setStatus("");
     }
 
     setShowModal(true);
@@ -74,7 +79,9 @@ const Calendar = () => {
       border: "none",
     },
   };
-
+  useEffect(() => {
+    localStorage.setItem("calendarEvents", JSON.stringify(events));
+  }, [events]);
   return (
     <>
       <div style={styles.grid}>
@@ -118,17 +125,24 @@ const Calendar = () => {
               onChange={(e) => setStatus(e.target.value)}
               style={styles.input}
             >
+              <option value="">Sin estado</option>
               <option value="pendiente">Pendiente</option>
               <option value="confirmado">Confirmado</option>
             </select>
 
             <button
               onClick={() => {
-                setEvents({
-                  ...events,
-                  [selectedDay]: { note, status },
-                });
+                const updatedEvents = { ...events };
 
+                if (!status && !note) {
+                  // 🔥 eliminar evento si está vacío
+                  delete updatedEvents[selectedDay];
+                } else {
+                  // guardar normalmente
+                  updatedEvents[selectedDay] = { note, status };
+                }
+
+                setEvents(updatedEvents);
                 setShowModal(false);
               }}
             >
