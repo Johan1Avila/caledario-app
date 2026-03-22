@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 
 const Calendar = () => {
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
   const [note, setNote] = useState("");
   const [status, setStatus] = useState("");
@@ -16,7 +17,10 @@ const Calendar = () => {
   const currentMonth = today.getMonth();
   const currentYear = today.getFullYear();
 
-  const daysInMonth = new Date(2026, 2 + 1, 0).getDate();
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
   const days = [];
 
   for (let i = 1; i <= daysInMonth; i++) {
@@ -89,12 +93,38 @@ const Calendar = () => {
 
   return (
     <>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          padding: "10px",
+        }}
+      >
+        <button onClick={() => setCurrentDate(new Date(year, month - 1))}>
+          ⬅️
+        </button>
+
+        <h2>
+          {currentDate.toLocaleString("es-ES", {
+            month: "long",
+            year: "numeric",
+          })}
+        </h2>
+
+        <button onClick={() => setCurrentDate(new Date(year, month + 1))}>
+          ➡️
+        </button>
+      </div>
+
       <div style={styles.grid}>
         {days.map((day) => {
-          const event = events[day];
+          const key = `${year}-${month}-${day}`;
+          const event = events[key];
 
           const isToday =
-            day === currentDay && currentMonth === 2 && currentYear === 2026;
+            day === currentDay &&
+            currentMonth === month &&
+            currentYear === year;
 
           let backgroundColor = "#E0E0E0";
 
@@ -124,7 +154,6 @@ const Calendar = () => {
           );
         })}
       </div>
-
       {showModal && (
         <div style={styles.modalOverlay}>
           <div style={styles.modal}>
@@ -153,9 +182,12 @@ const Calendar = () => {
                 const updatedEvents = { ...events };
 
                 if (!status && !note) {
-                  delete updatedEvents[selectedDay];
+                  delete updatedEvents[`${year}-${month}-${selectedDay}`];
                 } else {
-                  updatedEvents[selectedDay] = { note, status };
+                  updatedEvents[`${year}-${month}-${selectedDay}`] = {
+                    note,
+                    status,
+                  };
                 }
 
                 setEvents(updatedEvents);
