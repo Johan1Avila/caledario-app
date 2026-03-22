@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 const Calendar = () => {
+  const triggeredRef = useRef(new Set());
+
+  const [time, setTime] = useState("");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
   const [note, setNote] = useState("");
@@ -27,25 +30,64 @@ const Calendar = () => {
     days.push(i);
   }
 
+  // 🔔 ALARMAS (CORREGIDO)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date();
+
+      Object.entries(events).forEach(([key, event]) => {
+        if (!event.time) return;
+
+        const [eventYear, eventMonth, eventDay] = key.split("-").map(Number);
+        const [eventHour, eventMinute] = event.time.split(":").map(Number);
+
+        const eventDate = new Date(
+          eventYear,
+          eventMonth,
+          eventDay,
+          eventHour,
+          eventMinute,
+        );
+
+        const diff = now - eventDate;
+        const uniqueKey = key + event.time;
+
+        if (diff >= 0 && diff < 1000 && !triggeredRef.current.has(uniqueKey)) {
+          triggeredRef.current.add(uniqueKey);
+
+          console.log("⏰ ALARMA DISPARADA:", event);
+
+          alert(`⏰ Evento: ${event.note || "Sin nota"}`);
+        }
+      });
+    }, 1000); // ✅ IMPORTANTE
+
+    return () => clearInterval(interval);
+  }, [events]);
+
+  // 💾 GUARDAR EN LOCALSTORAGE
+  useEffect(() => {
+    localStorage.setItem("calendarEvents", JSON.stringify(events));
+  }, [events]);
+
   const handleDayClick = (day) => {
     setSelectedDay(day);
 
-    const event = events[day];
+    const key = `${year}-${month}-${day}`;
+    const event = events[key];
 
     if (event) {
       setNote(event.note);
       setStatus(event.status || "");
+      setTime(event.time || "");
     } else {
       setNote("");
       setStatus("");
+      setTime("");
     }
 
     setShowModal(true);
   };
-
-  useEffect(() => {
-    localStorage.setItem("calendarEvents", JSON.stringify(events));
-  }, [events]);
 
   const styles = {
     grid: {
@@ -93,6 +135,7 @@ const Calendar = () => {
 
   return (
     <>
+      {/* HEADER */}
       <div
         style={{
           display: "flex",
@@ -116,6 +159,7 @@ const Calendar = () => {
         </button>
       </div>
 
+      {/* CALENDARIO */}
       <div style={styles.grid}>
         {days.map((day) => {
           const key = `${year}-${month}-${day}`;
@@ -154,6 +198,8 @@ const Calendar = () => {
           );
         })}
       </div>
+
+      {/* MODAL */}
       {showModal && (
         <div style={styles.modalOverlay}>
           <div style={styles.modal}>
@@ -164,6 +210,13 @@ const Calendar = () => {
               placeholder="Escribe una nota"
               value={note}
               onChange={(e) => setNote(e.target.value)}
+              style={styles.input}
+            />
+
+            <input
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
               style={styles.input}
             />
 
@@ -180,13 +233,15 @@ const Calendar = () => {
             <button
               onClick={() => {
                 const updatedEvents = { ...events };
+                const key = `${year}-${month}-${selectedDay}`;
 
-                if (!status && !note) {
-                  delete updatedEvents[`${year}-${month}-${selectedDay}`];
+                if (!status && !note && !time) {
+                  delete updatedEvents[key];
                 } else {
-                  updatedEvents[`${year}-${month}-${selectedDay}`] = {
+                  updatedEvents[key] = {
                     note,
                     status,
+                    time,
                   };
                 }
 
