@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from "react";
 
 const Calendar = () => {
-  localStorage.setItem("clave", "valor");
-  localStorage.getItem("clave");
   const [showModal, setShowModal] = useState(false);
   const [note, setNote] = useState("");
   const [status, setStatus] = useState("");
   const [selectedDay, setSelectedDay] = useState(null);
+
   const [events, setEvents] = useState(() => {
     const saved = localStorage.getItem("calendarEvents");
     return saved ? JSON.parse(saved) : {};
   });
+
+  const today = new Date();
+  const currentDay = today.getDate();
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
 
   const daysInMonth = new Date(2026, 2 + 1, 0).getDate();
   const days = [];
@@ -35,7 +39,10 @@ const Calendar = () => {
     setShowModal(true);
   };
 
-  // ✅ MOVER AQUÍ
+  useEffect(() => {
+    localStorage.setItem("calendarEvents", JSON.stringify(events));
+  }, [events]);
+
   const styles = {
     grid: {
       display: "grid",
@@ -79,32 +86,43 @@ const Calendar = () => {
       border: "none",
     },
   };
-  useEffect(() => {
-    localStorage.setItem("calendarEvents", JSON.stringify(events));
-  }, [events]);
+
   return (
     <>
       <div style={styles.grid}>
-        {days.map((day) => (
-          <div
-            key={day}
-            className="day"
-            style={{
-              ...styles.day,
-              backgroundColor:
-                events[day]?.status === "confirmado"
-                  ? "#4CAF50"
-                  : events[day]?.status === "pendiente"
-                    ? "#FFC107"
-                    : "#E0E0E0",
+        {days.map((day) => {
+          const event = events[day];
 
-              border: selectedDay === day ? "3px solid #000" : "none",
-            }}
-            onClick={() => handleDayClick(day)}
-          >
-            {day}
-          </div>
-        ))}
+          const isToday =
+            day === currentDay && currentMonth === 2 && currentYear === 2026;
+
+          let backgroundColor = "#E0E0E0";
+
+          if (event?.status === "pendiente") {
+            backgroundColor = "#FFD54F";
+          } else if (event?.status === "confirmado") {
+            backgroundColor = "#81C784";
+          }
+
+          return (
+            <div
+              key={day}
+              style={{
+                ...styles.day,
+                backgroundColor,
+                border:
+                  selectedDay === day
+                    ? "3px solid #ababab"
+                    : isToday
+                      ? "3px solid #2196F3"
+                      : "none",
+              }}
+              onClick={() => handleDayClick(day)}
+            >
+              {day}
+            </div>
+          );
+        })}
       </div>
 
       {showModal && (
@@ -135,10 +153,8 @@ const Calendar = () => {
                 const updatedEvents = { ...events };
 
                 if (!status && !note) {
-                  // 🔥 eliminar evento si está vacío
                   delete updatedEvents[selectedDay];
                 } else {
-                  // guardar normalmente
                   updatedEvents[selectedDay] = { note, status };
                 }
 
