@@ -85,17 +85,26 @@ const Calendar = () => {
           console.log("⏰ ALARMA DISPARADA:", event);
 
           // 🔊 SONIDO
-          if (audioUnlocked && alarmRef.current) {
+          if (alarmRef.current) {
             alarmRef.current.currentTime = 0;
+
             alarmRef.current.play().catch((err) => {
-              console.log("Error audio:", err);
+              console.log("❌ Error audio:", err);
             });
           }
 
-          // ⚠️ ALERT DESPUÉS DEL AUDIO
+          // ⏱️ Mostramos alerta
           setTimeout(() => {
             alert(`⏰ Evento: ${event.note || "Sin nota"}`);
+
+            // 🛑 DETENER SONIDO DESPUÉS DEL OK
+            if (alarmRef.current) {
+              alarmRef.current.pause();
+              alarmRef.current.currentTime = 0;
+            }
           }, 200);
+
+          // ⚠️ ALERT DESPUÉS DEL AUDIO
         }
       });
     }, 1000);
@@ -163,6 +172,7 @@ const Calendar = () => {
         }}
       >
         {/* 🔊 BOTÓN DE PRUEBA */}
+        {/* 
         <button
           onClick={() => {
             alarmRef.current
@@ -173,7 +183,7 @@ const Calendar = () => {
         >
           Probar sonido
         </button>
-
+        */}
         {days.map((day) => {
           const key = `${year}-${month}-${day}`;
           const event = events[key];
