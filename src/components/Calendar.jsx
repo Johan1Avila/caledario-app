@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 
 const Calendar = () => {
   const triggeredRef = useRef(new Set());
+  const alarmRef = useRef(null);
 
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
   const [time, setTime] = useState("");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
@@ -30,7 +32,32 @@ const Calendar = () => {
     days.push(i);
   }
 
-  // 🔔 ALARMAS (CORREGIDO)
+  // 🔊 CONFIGURAR AUDIO
+  useEffect(() => {
+    alarmRef.current = document.createElement("audio");
+    alarmRef.current.src = "/sounds/alarm.mp3";
+    alarmRef.current.preload = "auto";
+    alarmRef.current.load();
+
+    const unlockAudio = async () => {
+      try {
+        await alarmRef.current.play();
+        alarmRef.current.pause();
+        alarmRef.current.currentTime = 0;
+
+        setAudioUnlocked(true);
+        console.log("🔓 Audio desbloqueado");
+      } catch (err) {
+        console.log("Error desbloqueando audio:", err);
+      }
+
+      document.removeEventListener("click", unlockAudio);
+    };
+
+    document.addEventListener("click", unlockAudio);
+  }, []);
+
+  // 🔔 ALARMAS
   useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date();
@@ -50,22 +77,33 @@ const Calendar = () => {
         );
 
         const diff = now - eventDate;
-        const uniqueKey = key + event.time;
+        const uniqueKey = `${key}-${event.time}`;
 
         if (diff >= 0 && diff < 1000 && !triggeredRef.current.has(uniqueKey)) {
           triggeredRef.current.add(uniqueKey);
 
           console.log("⏰ ALARMA DISPARADA:", event);
 
-          alert(`⏰ Evento: ${event.note || "Sin nota"}`);
+          // 🔊 SONIDO
+          if (audioUnlocked && alarmRef.current) {
+            alarmRef.current.currentTime = 0;
+            alarmRef.current.play().catch((err) => {
+              console.log("Error audio:", err);
+            });
+          }
+
+          // ⚠️ ALERT DESPUÉS DEL AUDIO
+          setTimeout(() => {
+            alert(`⏰ Evento: ${event.note || "Sin nota"}`);
+          }, 200);
         }
       });
-    }, 1000); // ✅ IMPORTANTE
+    }, 1000);
 
     return () => clearInterval(interval);
-  }, [events]);
+  }, [events, audioUnlocked]);
 
-  // 💾 GUARDAR EN LOCALSTORAGE
+  // 💾 GUARDAR
   useEffect(() => {
     localStorage.setItem("calendarEvents", JSON.stringify(events));
   }, [events]);
@@ -87,50 +125,6 @@ const Calendar = () => {
     }
 
     setShowModal(true);
-  };
-
-  const styles = {
-    grid: {
-      display: "grid",
-      gridTemplateColumns: "repeat(7, 1fr)",
-      gap: "10px",
-      padding: "20px",
-    },
-    day: {
-      height: "80px",
-      backgroundColor: "#E0E0E0",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: "15px",
-      cursor: "pointer",
-      transition: "0.2s",
-    },
-    modalOverlay: {
-      position: "fixed",
-      top: 0,
-      left: 0,
-      width: "100%",
-      height: "100%",
-      backgroundColor: "rgba(0,0,0,0.6)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    modal: {
-      backgroundColor: "#1e1e1e",
-      padding: "20px",
-      borderRadius: "10px",
-      width: "300px",
-      display: "flex",
-      flexDirection: "column",
-      gap: "10px",
-    },
-    input: {
-      padding: "10px",
-      borderRadius: "5px",
-      border: "none",
-    },
   };
 
   return (
@@ -160,7 +154,26 @@ const Calendar = () => {
       </div>
 
       {/* CALENDARIO */}
-      <div style={styles.grid}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(7, 1fr)",
+          gap: "10px",
+          padding: "20px",
+        }}
+      >
+        {/* 🔊 BOTÓN DE PRUEBA */}
+        <button
+          onClick={() => {
+            alarmRef.current
+              .play()
+              .then(() => console.log("🔊 SONANDO"))
+              .catch((err) => console.log("❌ ERROR:", err));
+          }}
+        >
+          Probar sonido
+        </button>
+
         {days.map((day) => {
           const key = `${year}-${month}-${day}`;
           const event = events[key];
@@ -182,14 +195,14 @@ const Calendar = () => {
             <div
               key={day}
               style={{
-                ...styles.day,
+                height: "80px",
                 backgroundColor,
-                border:
-                  selectedDay === day
-                    ? "3px solid #ababab"
-                    : isToday
-                      ? "3px solid #2196F3"
-                      : "none",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "15px",
+                cursor: "pointer",
+                border: isToday ? "3px solid #2196F3" : "none",
               }}
               onClick={() => handleDayClick(day)}
             >
@@ -201,30 +214,44 @@ const Calendar = () => {
 
       {/* MODAL */}
       {showModal && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modal}>
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(0,0,0,0.6)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#1e1e1e",
+              padding: "20px",
+              borderRadius: "10px",
+              width: "300px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+            }}
+          >
             <h2>Día {selectedDay}</h2>
 
             <input
-              type="text"
-              placeholder="Escribe una nota"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              style={styles.input}
+              placeholder="Nota"
             />
-
             <input
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              style={styles.input}
             />
 
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              style={styles.input}
-            >
+            <select value={status} onChange={(e) => setStatus(e.target.value)}>
               <option value="">Sin estado</option>
               <option value="pendiente">Pendiente</option>
               <option value="confirmado">Confirmado</option>
@@ -232,20 +259,13 @@ const Calendar = () => {
 
             <button
               onClick={() => {
-                const updatedEvents = { ...events };
+                const updated = { ...events };
                 const key = `${year}-${month}-${selectedDay}`;
 
-                if (!status && !note && !time) {
-                  delete updatedEvents[key];
-                } else {
-                  updatedEvents[key] = {
-                    note,
-                    status,
-                    time,
-                  };
-                }
+                if (!status && !note && !time) delete updated[key];
+                else updated[key] = { note, status, time };
 
-                setEvents(updatedEvents);
+                setEvents(updated);
                 setShowModal(false);
               }}
             >
