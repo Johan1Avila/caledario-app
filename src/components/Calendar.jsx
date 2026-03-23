@@ -31,7 +31,13 @@ const Calendar = () => {
   for (let i = 1; i <= daysInMonth; i++) {
     days.push(i);
   }
-
+  useEffect(() => {
+    if ("Notification" in window) {
+      Notification.requestPermission().then((permission) => {
+        console.log("Permiso notificaciones:", permission);
+      });
+    }
+  }, []);
   // 🔊 CONFIGURAR AUDIO
   useEffect(() => {
     alarmRef.current = document.createElement("audio");
@@ -56,7 +62,19 @@ const Calendar = () => {
 
     document.addEventListener("click", unlockAudio);
   }, []);
+  const showNotification = (event) => {
+    if ("Notification" in window && Notification.permission === "granted") {
+      const notification = new Notification("📅 Recordatorio", {
+        body: event.note || "Tienes un evento",
+        icon: "/icon.png", // opcional (puedes quitarlo si no tienes icono)
+      });
 
+      // 🔥 OPCIONAL PRO: al hacer click vuelve a la app
+      notification.onclick = () => {
+        window.focus();
+      };
+    }
+  };
   // 🔔 ALARMAS
   useEffect(() => {
     const interval = setInterval(() => {
@@ -79,18 +97,18 @@ const Calendar = () => {
         const diff = now - eventDate;
         const uniqueKey = `${key}-${event.time}`;
 
-        if (diff >= 0 && diff < 1000 && !triggeredRef.current.has(uniqueKey)) {
+        if (Math.abs(diff) < 500 && !triggeredRef.current.has(uniqueKey)) {
           triggeredRef.current.add(uniqueKey);
 
           console.log("⏰ ALARMA DISPARADA:", event);
+          // 🔔 NOTIFICACIÓN
+          showNotification(event);
 
           // 🔊 SONIDO
           if (alarmRef.current) {
             alarmRef.current.currentTime = 0;
 
-            alarmRef.current.play().catch((err) => {
-              console.log("❌ Error audio:", err);
-            });
+            alarmRef.current.play().catch(() => {});
           }
 
           // ⏱️ Mostramos alerta
