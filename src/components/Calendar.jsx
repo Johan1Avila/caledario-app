@@ -4,6 +4,7 @@ const Calendar = () => {
   const triggeredRef = useRef(new Set());
   const alarmRef = useRef(null);
 
+  const [activeAlarm, setActiveAlarm] = useState(null);
   const [audioUnlocked, setAudioUnlocked] = useState(false);
   const [time, setTime] = useState("");
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -31,6 +32,8 @@ const Calendar = () => {
   for (let i = 1; i <= daysInMonth; i++) {
     days.push(i);
   }
+
+  // 🔔 PERMISOS NOTIFICACIONES
   useEffect(() => {
     if ("Notification" in window) {
       Notification.requestPermission().then((permission) => {
@@ -38,6 +41,7 @@ const Calendar = () => {
       });
     }
   }, []);
+
   // 🔊 CONFIGURAR AUDIO
   useEffect(() => {
     alarmRef.current = document.createElement("audio");
@@ -50,7 +54,6 @@ const Calendar = () => {
         await alarmRef.current.play();
         alarmRef.current.pause();
         alarmRef.current.currentTime = 0;
-
         setAudioUnlocked(true);
         console.log("🔓 Audio desbloqueado");
       } catch (err) {
@@ -62,19 +65,30 @@ const Calendar = () => {
 
     document.addEventListener("click", unlockAudio);
   }, []);
+
+  // 🔔 NOTIFICACIÓN
   const showNotification = (event) => {
     if ("Notification" in window && Notification.permission === "granted") {
       const notification = new Notification("📅 Recordatorio", {
         body: event.note || "Tienes un evento",
-        icon: "/icon.png", // opcional (puedes quitarlo si no tienes icono)
       });
 
-      // 🔥 OPCIONAL PRO: al hacer click vuelve a la app
       notification.onclick = () => {
         window.focus();
       };
     }
   };
+
+  // 🛑 DETENER ALARMA
+  const stopAlarm = () => {
+    if (alarmRef.current) {
+      alarmRef.current.pause();
+      alarmRef.current.currentTime = 0;
+    }
+
+    setActiveAlarm(null);
+  };
+
   // 🔔 ALARMAS
   useEffect(() => {
     const interval = setInterval(() => {
@@ -91,7 +105,7 @@ const Calendar = () => {
           eventMonth,
           eventDay,
           eventHour,
-          eventMinute,
+          eventMinute
         );
 
         const diff = now - eventDate;
@@ -101,28 +115,18 @@ const Calendar = () => {
           triggeredRef.current.add(uniqueKey);
 
           console.log("⏰ ALARMA DISPARADA:", event);
+
           // 🔔 NOTIFICACIÓN
           showNotification(event);
 
           // 🔊 SONIDO
           if (alarmRef.current) {
             alarmRef.current.currentTime = 0;
-
             alarmRef.current.play().catch(() => {});
           }
 
-          // ⏱️ Mostramos alerta
-          setTimeout(() => {
-            alert(`⏰ Evento: ${event.note || "Sin nota"}`);
-
-            // 🛑 DETENER SONIDO DESPUÉS DEL OK
-            if (alarmRef.current) {
-              alarmRef.current.pause();
-              alarmRef.current.currentTime = 0;
-            }
-          }, 200);
-
-          // ⚠️ ALERT DESPUÉS DEL AUDIO
+          // 💬 BANNER
+          setActiveAlarm(event);
         }
       });
     }, 1000);
@@ -156,14 +160,44 @@ const Calendar = () => {
 
   return (
     <>
+      {/* 🔥 BANNER ALARMA */}
+      {activeAlarm && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: "20px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            backgroundColor: "#333",
+            color: "#fff",
+            padding: "15px 20px",
+            borderRadius: "10px",
+            display: "flex",
+            alignItems: "center",
+            gap: "15px",
+            zIndex: 9999,
+          }}
+        >
+          <span>⏰ {activeAlarm.note || "Tienes un evento"}</span>
+
+          <button
+            onClick={stopAlarm}
+            style={{
+              backgroundColor: "#ff5252",
+              border: "none",
+              color: "#fff",
+              padding: "5px 10px",
+              borderRadius: "5px",
+              cursor: "pointer",
+            }}
+          >
+            Detener
+          </button>
+        </div>
+      )}
+
       {/* HEADER */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          padding: "10px",
-        }}
-      >
+      <div style={{ display: "flex", justifyContent: "space-between", padding: "10px" }}>
         <button onClick={() => setCurrentDate(new Date(year, month - 1))}>
           ⬅️
         </button>
@@ -189,19 +223,6 @@ const Calendar = () => {
           padding: "20px",
         }}
       >
-        {/* 🔊 BOTÓN DE PRUEBA */}
-        {/* 
-        <button
-          onClick={() => {
-            alarmRef.current
-              .play()
-              .then(() => console.log("🔊 SONANDO"))
-              .catch((err) => console.log("❌ ERROR:", err));
-          }}
-        >
-          Probar sonido
-        </button>
-        */}
         {days.map((day) => {
           const key = `${year}-${month}-${day}`;
           const event = events[key];
@@ -268,16 +289,8 @@ const Calendar = () => {
           >
             <h2>Día {selectedDay}</h2>
 
-            <input
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Nota"
-            />
-            <input
-              type="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-            />
+            <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nota" />
+            <input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
 
             <select value={status} onChange={(e) => setStatus(e.target.value)}>
               <option value="">Sin estado</option>
