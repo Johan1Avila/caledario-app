@@ -7,9 +7,11 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+
       devOptions: {
-        enabled: true // 🔥 importante para probar en dev
+        enabled: true // 🔥 para probar PWA en dev
       },
+
       manifest: {
         name: 'Calendario Pro',
         short_name: 'Calendario',
@@ -28,6 +30,25 @@ export default defineConfig({
             src: '/icon-512.png',
             sizes: '512x512',
             type: 'image/png'
+          }
+        ]
+      },
+
+      // 🔥 🔥 🔥 CLAVE PARA TU PROBLEMA
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,mp3}'],
+
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.destination === 'audio',
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'audio-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 días
+              }
+            }
           }
         ]
       }

@@ -50,12 +50,48 @@ function InstallButton() {
 }
 
 function App() {
+
+  // 🔓 DESBLOQUEAR AUDIO (CLAVE)
+  useEffect(() => {
+    const unlockAudio = () => {
+      const audio = new Audio('/sounds/alert.mp3');
+      audio.play().catch(() => { });
+      document.removeEventListener('click', unlockAudio);
+    };
+
+    document.addEventListener('click', unlockAudio);
+
+    return () => {
+      document.removeEventListener('click', unlockAudio);
+    };
+  }, []);
+
+  // 🔊 FUNCIÓN GLOBAL DE SONIDO
+  const playSound = () => {
+    const audio = new Audio('/sounds/alert.mp3');
+    audio.play().catch(err => console.log("Error audio:", err));
+  };
+
+  // ⏰ PRUEBA (puedes quitarla luego)
+  const testAlarm = () => {
+    alert("Alarma 🔔");
+    playSound();
+  };
+
   return (
     <div>
       <h1 style={{ textAlign: "center" }}>Calendario de eventos</h1>
+
       <Calendar />
 
-      {/* 🔥 AQUÍ LO USAS */}
+      {/* 🔔 BOTÓN DE PRUEBA */}
+      <div style={{ textAlign: "center", marginTop: 20 }}>
+        <button onClick={testAlarm}>
+          Probar sonido 🔊
+        </button>
+      </div>
+
+      {/* 🔥 BOTÓN INSTALAR */}
       <InstallButton />
     </div>
   );
