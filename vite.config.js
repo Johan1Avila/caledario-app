@@ -36,7 +36,7 @@ export default defineConfig({
 
       // 🔥 🔥 🔥 CLAVE PARA TU PROBLEMA
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,mp3}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'], // ❌ sin mp3
 
         runtimeCaching: [
           {
@@ -46,7 +46,7 @@ export default defineConfig({
               cacheName: 'audio-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 días
+                maxAgeSeconds: 60 * 60 * 24 * 30
               }
             }
           }
